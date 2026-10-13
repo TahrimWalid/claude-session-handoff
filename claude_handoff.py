@@ -114,7 +114,9 @@ def shorten(text: str, width: int) -> str:
 # --------------------------------------------------------------------------
 
 def expand_path(p: str) -> Path:
-    return Path(os.path.expandvars(os.path.expanduser(p))).absolute()
+    path = os.path.abspath(os.path.expandvars(os.path.expanduser(p)))
+    # realpath also expands Windows 8.3 short names such as RUNNER~1.
+    return Path(os.path.realpath(path) if os.path.exists(path) else path)
 
 
 def default_config_dir() -> Path:
@@ -157,15 +159,20 @@ def normalize_root(p: str) -> str:
 def local_canonical(p: str) -> str:
     """Resolve a path on this machine the way Claude Code does (realpath + NFC).
 
-    A path in the other OS's style (preparing a session for another machine)
-    is only cleaned up, since there is nothing here to resolve it against.
+    Only paths that exist here are resolved. A path that does not exist yet
+    (a repo you have not cloned, or a folder on another machine) is only
+    cleaned up: resolving it would follow this machine's links, e.g. macOS
+    turns /home/me into /System/Volumes/Data/home/me.
     """
     expanded = os.path.expandvars(os.path.expanduser(p))
-    if is_windows_style(expanded) != host_is_windows() and (
-            is_windows_style(expanded) or expanded.startswith("/")):
+    foreign = is_windows_style(expanded) != host_is_windows() and (
+        is_windows_style(expanded) or expanded.startswith("/"))
+    if foreign:
         return normalize_root(expanded)
-    resolved = os.path.realpath(os.path.abspath(expanded))
-    return normalize_root(unicodedata.normalize("NFC", resolved))
+    absolute = os.path.abspath(expanded)
+    if os.path.exists(absolute):
+        absolute = os.path.realpath(absolute)
+    return normalize_root(unicodedata.normalize("NFC", absolute))
 
 
 def home_of(path: str) -> Optional[str]:
