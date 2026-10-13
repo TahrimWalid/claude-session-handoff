@@ -177,7 +177,7 @@ claude-handoff import 157ce8e3 --to-cwd ~/new/location/app
 python3 -m unittest discover -s tests -v
 ```
 
-The suite has 44 tests: all nine OS directions, the OS-specific path forms, the safety checks, and record shapes taken from real transcripts. CI runs them on Linux, macOS and Windows.
+The suite has 45 tests: all nine OS directions, the OS-specific path forms, the safety checks, and record shapes taken from real transcripts. CI runs them on Linux, macOS and Windows.
 
 Beyond the unit tests, the tool was checked end to end against Claude Code 2.1.296 using a real 1.8 MB, 337-line transcript:
 
