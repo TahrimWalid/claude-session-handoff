@@ -232,7 +232,7 @@ class AccountHandoffTests(Base):
         dst = self.b / "projects" / ch.slugify(self.cwd) / f"{SID}.jsonl"
         self.assertEqual(dst.read_text(), self.t.read_text())  # nothing to rewrite
         self.assertTrue((self.b / "file-history" / SID / "abc@v1").is_file())
-        self.assertIn("CLAUDE_CONFIG_DIR=", out)
+        self.assertRegex(out, r"CLAUDE_CONFIG_DIR(=| = )")  # bash or PowerShell form
 
     def test_new_id_fork(self):
         code, out, err = run(["import", SID, "--from-config-dir", str(self.a),
@@ -427,6 +427,12 @@ _add_direction_tests()
 
 
 class OSSpecificTests(unittest.TestCase):
+    def test_missing_target_path_is_not_resolved(self):
+        # On macOS, realpath("/home/x") follows the /home link to /System/Volumes/Data/home/x.
+        missing = "/home/nobody-here-12345/app"
+        if os.name != "nt":
+            self.assertEqual(ch.local_canonical(missing), missing)
+
     def test_macos_paths_are_case_insensitive(self):
         m = ch.PathMapper([("/Users/alice/code/app", "/home/bob/app")])
         self.assertEqual(m("/users/ALICE/Code/app/x.py"), "/home/bob/app/x.py")
